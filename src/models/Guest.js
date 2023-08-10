@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const guestSchema = new mongoose.Schema(
+const GuestSchema = new mongoose.Schema(
   {
     user: { type: mongoose.SchemaTypes.ObjectId, ref: "User" },
     restaurant: { type: mongoose.SchemaTypes.ObjectId, ref: "Restaurant" },
@@ -9,14 +9,17 @@ const guestSchema = new mongoose.Schema(
     date: { type: Date },
     paid: { type: Boolean, default: false },
     amountPaid: { type: String },
-    isCancelled: {type: Boolean, default: false},
-    cancelledAt: { type: Date}
+    isCancelled: { type: Boolean, default: false },
+    cancelledAt: { type: Date },
+    cancelReason: { type: String },
+    userCancelled: { type: Boolean, default: false },
+    restaurantCancelled: { type: Boolean, default: false },
   },
   {
     timestamps: true,
   }
 );
 
-const guestModel = mongoose.model('Guest', guestSchema)
+const guestModel = mongoose.model("Guest", GuestSchema);
 
-module.exports = guestModel
+module.exports = guestModel;
