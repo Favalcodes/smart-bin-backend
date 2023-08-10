@@ -16,17 +16,14 @@ const registerUser = asyncHandler(async (req, res) => {
   const nanoid = await customAlphabet("1234567890", 6);
   const phoneOtp = nanoid();
   const user = await userModel.create({ phoneNumber, phoneOtp });
-  res
-    .status(200)
-    .json({
-      success: true,
-      message:
-        "User Registered Successfully, Otp has been sent to Phone number",
-      user,
-    });
+  res.status(200).json({
+    success: true,
+    message: "User Registered Successfully, Otp has been sent to Phone number",
+    user,
+  });
 });
 
-const updateUser = asyncHandler(async (req, res) => {
+const onboardUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
   const userId = req.params.userId;
   if (!firstName || !lastName || !email || !password) {
@@ -43,49 +40,43 @@ const updateUser = asyncHandler(async (req, res) => {
     { id: userId },
     { firstName, lastName, email, password: newPassword, emailOtp }
   );
-  res
-    .status(200)
-    .json({
-      success: true,
-      message: "User Updated Successfully, Otp has been sent to email",
-      user,
-    });
+  res.status(200).json({
+    success: true,
+    message: "User Updated Successfully, Otp has been sent to email",
+    user,
+  });
 });
 
-const verifyPhoneNumber = asyncHandler(async (req, res) => {
-  const userId = req.params.userId;
-  const { otp } = req.body;
-  const otpExist = await userModel.findOne({ id: userId, phoneOtp: otp });
-  if (!otpExist) {
-    throw new Error("Invalid otp");
-  }
-  const user = await userModel.update(
-    { id: userId },
-    { isPhoneVerified: true }
-  );
-  res
-    .status(200)
-    .json({
+const verifyOtp = asyncHandler(async (req, res) => {
+  const userId = req.params.id;
+  const { otp, route } = req.body;
+  if (route === "PHONE") {
+    const otpExist = await userModel.findOne({ id: userId, phoneOtp: otp });
+    if (!otpExist) {
+      throw new Error("Invalid otp");
+    }
+    const user = await userModel.update(
+      { id: userId },
+      { isPhoneVerified: true }
+    );
+    res.status(200).json({
       success: true,
       message: "Phone number verified successfully",
       user,
     });
-});
-
-const verifyEmail = asyncHandler(async (req, res) => {
-  const userId = req.params.userId;
-  const { otp } = req.body;
-  const otpExist = await userModel.findOne({ id: userId, emailOtp: otp });
-  if (!otpExist) {
-    throw new Error("Invalid otp");
+  } else {
+    const otpExist = await userModel.findOne({ id: userId, emailOtp: otp });
+    if (!otpExist) {
+      throw new Error("Invalid otp");
+    }
+    const user = await userModel.update(
+      { id: userId },
+      { isEmailVerified: true }
+    );
+    res
+      .status(200)
+      .json({ success: true, message: `${route} verified successfully`, user });
   }
-  const user = await userModel.update(
-    { id: userId },
-    { isEmailVerified: true }
-  );
-  res
-    .status(200)
-    .json({ success: true, message: "Email verified successfully", user });
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -115,46 +106,52 @@ const sendVerificationCode = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const nanoid = await customAlphabet("1234567890", 6);
   if (email) {
-    const isEmailExist = await userModel.findOne({email})
-    if(!isEmailExist) {
-      res.status(404)
-      throw new Error("Email does not exist")
+    const isEmailExist = await userModel.findOne({ email });
+    if (!isEmailExist) {
+      res.status(404);
+      throw new Error("Email does not exist");
     }
     const emailOtp = nanoid();
     await userModel.update({ id: userId }, { emailOtp });
     res.status(200).json({ success: true, message: "Otp sent" });
   }
   if (phoneNumber) {
-    const isPhoneExist = await userModel.findOne({phoneNumber})
-    if(!isPhoneExist) {
-      res.status(404)
-      throw new Error("Phone number does not exist")
+    const isPhoneExist = await userModel.findOne({ phoneNumber });
+    if (!isPhoneExist) {
+      res.status(404);
+      throw new Error("Phone number does not exist");
     }
     const phoneOtp = nanoid();
     await userModel.create({ phoneNumber, phoneOtp });
     res.status(200).json({ success: true, message: "Otp sent" });
   }
-  res.status(404).json({success: false, message: 'No means for verification provided'})
+  res
+    .status(404)
+    .json({ success: false, message: "No means for verification provided" });
 });
 
-const updatePassword = asyncHandler( async (req, res) => {
-    const {oldPassword, newPassword} = req.body
-    const userId = req.user.id
-    const user = await userModel.findById(userId)
-    if(user && (await bcrypt.compare(oldPassword, user.password))) {
-        await userModel.update({id: userId}, {password: bcrypt.hash(newPassword, 10)})
-        res.status(200).json({success: true, message: 'Password updated successfully'})
-    }
-    res.status(404)
-    throw new Error('Old password is incorrect')
-})
+const updatePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user.id;
+  const user = await userModel.findById(userId);
+  if (user && (await bcrypt.compare(oldPassword, user.password))) {
+    await userModel.update(
+      { id: userId },
+      { password: bcrypt.hash(newPassword, 10) }
+    );
+    res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  }
+  res.status(404);
+  throw new Error("Old password is incorrect");
+});
 
 module.exports = {
   registerUser,
-  updateUser,
-  verifyEmail,
-  verifyPhoneNumber,
+  onboardUser,
+  verifyOtp,
   loginUser,
   sendVerificationCode,
-  updatePassword
+  updatePassword,
 };

@@ -1,12 +1,23 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const cors = require('cors')
 const errorHandler = require('./middleware/errorHandler')
+const userRoutes = require('./routes/userRoutes')
+const restaurantRoutes = require('./routes/restaurantRoutes')
+const guestRoutes = require('./routes/guestRoutes')
+const reviewRoutes = require('./routes/reviewRoutes')
+const menuRoutes = require('./routes/menuRoutes')
+const adminRoutes = require('./routes/adminRoutes')
 require('dotenv').config()
 
 const app = express()
 
 app.use(bodyParser.json({type: 'application/json'}))
+app.use('/api/user', userRoutes())
+app.use('/api/restaurant', restaurantRoutes())
+app.use('/api/guest', guestRoutes())
+app.use('/api/review', reviewRoutes())
+app.use('/api/menu', menuRoutes())
+app.use('/api/admin', adminRoutes())
 app.use(errorHandler())
 
 app.listen(process.env.PORT, () => {
