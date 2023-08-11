@@ -1,16 +1,18 @@
-const { customAlphabet } = require("nanoid");
 const userModel = require("../models/User");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { customAlphabet } = require("nanoid");
 
 const registerUser = asyncHandler(async (req, res) => {
   const { phoneNumber } = req.body;
   if (!phoneNumber) {
+    res.status(400)
     throw new Error("Phone number is required");
   }
   const isExist = await userModel.findOne({ phoneNumber });
   if (isExist) {
+    res.status(400)
     throw new Error("Phone number already exist");
   }
   const nanoid = await customAlphabet("1234567890", 6);
@@ -27,19 +29,22 @@ const onboardUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
   const userId = req.params.userId;
   if (!firstName || !lastName || !email || !password) {
+    res.status(400)
     throw new Error("Please fill all details");
   }
   const isExist = await userModel.findOne({ email });
   if (isExist) {
+    res.status(400)
     throw new Error("Email already exist");
   }
   const newPassword = await bcrypt.hash(password, 10);
-  const nanoid = await customAlphabet("1234567890", 6);
+  const nanoid = customAlphabet("1234567890", 6);
   const emailOtp = nanoid();
-  const user = await userModel.update(
+  await userModel.updateOne(
     { id: userId },
     { firstName, lastName, email, password: newPassword, emailOtp }
   );
+  const user = await userModel.findOne({email})
   res.status(200).json({
     success: true,
     message: "User Updated Successfully, Otp has been sent to email",

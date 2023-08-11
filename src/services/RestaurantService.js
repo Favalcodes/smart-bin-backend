@@ -24,7 +24,7 @@ const registerRestaurant = asyncHandler(async (req, res) => {
   }
   const nanoid = customAlphabet("1234567890abcdef", 10);
   const password = nanoid();
-  const hashedPassword = bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
   const restaurant = await restaurantModel.create({
     email,
     name,
@@ -87,7 +87,7 @@ const onboardRestaurant = asyncHandler(async (req, res) => {
   if (bookingFee) {
     restaurant.bookingFee = bookingFee;
   }
-  const updated = await restaurantModel.update({ id }, restaurant);
+  const updated = await restaurantModel.updateOne({ id }, restaurant);
   res
     .status(200)
     .json({
@@ -125,7 +125,7 @@ const updateRestaurant = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Restaurant does not exist");
   }
-  const restaurant = await restaurantModel.update({ id }, data);
+  const restaurant = await restaurantModel.updateOne({ id }, data);
   res
     .status(200)
     .json({
