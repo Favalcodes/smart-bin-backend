@@ -8,6 +8,9 @@ const app = express()
 connectDb(process.env.MONGO_URL)
 
 app.use(bodyParser.json({type: 'application/json'}))
+app.get('/', (req, res) => {
+    res.send('Server is running')
+})
 app.use('/api/user', require('./routes/userRoutes'))
 app.use('/api/restaurant', require('./routes/restaurantRoutes'))
 app.use('/api/guest', require('./routes/guestRoutes'))
