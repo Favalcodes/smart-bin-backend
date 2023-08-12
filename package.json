@@ -2,9 +2,10 @@
   "name": "spots-backend",
   "version": "1.0.0",
   "description": "backend application for spotsandseat",
-  "main": "api/index.js",
+  "main": "index.js",
   "scripts": {
-    "dev": "nodemon api/index.js"
+    "dev": "nodemon index.js",
+    "start": "nodemon index.js"
   },
   "repository": {
     "type": "git",
