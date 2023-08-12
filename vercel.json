@@ -1,0 +1,10 @@
+{
+    "version": 1,
+    "name": "spots-api",
+    "builds": [
+       { "src": "src/server.js", "use": "@vercel/node" }
+    ],
+    "routes": [
+       { "src": "/(.*)", "dest": "/src/server.js" }
+    ]
+ }
