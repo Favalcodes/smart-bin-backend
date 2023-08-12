@@ -22,3 +22,5 @@ app.use(errorHandler)
 app.listen(process.env.PORT, () => {
     console.log('Server started on 4000')
 })
+
+module.exports = app
