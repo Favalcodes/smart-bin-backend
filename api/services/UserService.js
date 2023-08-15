@@ -7,12 +7,12 @@ const { customAlphabet } = require("nanoid");
 const registerUser = asyncHandler(async (req, res) => {
   const { phoneNumber } = req.body;
   if (!phoneNumber) {
-    res.status(400)
+    res.status(400);
     throw new Error("Phone number is required");
   }
   const isExist = await userModel.findOne({ phoneNumber });
   if (isExist) {
-    res.status(400)
+    res.status(400);
     throw new Error("Phone number already exist");
   }
   const nanoid = await customAlphabet("1234567890", 6);
@@ -27,41 +27,56 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const onboardUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
-  const userId = req.params.userId;
+  const userId = req.query.id;
+  if (!userId) {
+    res.status(400);
+    throw new Error("User Id is required");
+  }
   if (!firstName || !lastName || !email || !password) {
-    res.status(400)
+    res.status(400);
     throw new Error("Please fill all details");
   }
   const isExist = await userModel.findOne({ email });
   if (isExist) {
-    res.status(400)
+    res.status(400);
     throw new Error("Email already exist");
   }
   const newPassword = await bcrypt.hash(password, 10);
   const nanoid = customAlphabet("1234567890", 6);
   const emailOtp = nanoid();
-  await userModel.updateOne(
-    { id: userId },
+  const data = await userModel.updateOne(
+    { _id: userId },
     { firstName, lastName, email, password: newPassword, emailOtp }
   );
-  const user = await userModel.findOne({email})
-  res.status(200).json({
-    success: true,
-    message: "User Updated Successfully, Otp has been sent to email",
-    user,
-  });
+  if (data) {
+    console.log('DATA', data)
+    const user = await userModel.findOne({ email });
+    res.status(200).json({
+      success: true,
+      message: "User Updated Successfully, Otp has been sent to email",
+      user,
+    });
+  } else {
+    res.status(500);
+    throw new Error("User was not update");
+  }
 });
 
 const verifyOtp = asyncHandler(async (req, res) => {
-  const userId = req.params.id;
+  const userId = req.query.id;
   const { otp, route } = req.body;
+  if (!userId) {
+    res.status(400);
+    throw new Error("User Id is required");
+  }
   if (route === "PHONE") {
-    const otpExist = await userModel.findOne({ id: userId, phoneOtp: otp });
+    const otpExist = await userModel.findOne({ _id: userId, phoneOtp: otp });
     if (!otpExist) {
+      res.status(400);
       throw new Error("Invalid otp");
     }
-    const user = await userModel.update(
-      { id: userId },
+    const user = await userModel.updateOne(
+      { _id: userId },
       { isPhoneVerified: true }
     );
     res.status(200).json({
@@ -70,12 +85,13 @@ const verifyOtp = asyncHandler(async (req, res) => {
       user,
     });
   } else {
-    const otpExist = await userModel.findOne({ id: userId, emailOtp: otp });
+    const otpExist = await userModel.findOne({ _id: userId, emailOtp: otp });
     if (!otpExist) {
+      res.status(400);
       throw new Error("Invalid otp");
     }
-    const user = await userModel.update(
-      { id: userId },
+    const user = await userModel.updateOne(
+      { _id: userId },
       { isEmailVerified: true }
     );
     res
@@ -101,14 +117,18 @@ const loginUser = asyncHandler(async (req, res) => {
     );
     res
       .status(200)
-      .json({ success: true, message: "Logged in successfully", token });
+      .json({ success: true, message: "Logged in successfully", token, user });
   }
   throw new Error("Login not successful");
 });
 
 const sendVerificationCode = asyncHandler(async (req, res) => {
   const { email, phoneNumber } = req.body;
-  const userId = req.user.id;
+  const userId = req.user._id;
+  if (!userId) {
+    res.status(401);
+    throw new Error("Unauthorized");
+  }
   const nanoid = await customAlphabet("1234567890", 6);
   if (email) {
     const isEmailExist = await userModel.findOne({ email });
@@ -117,7 +137,7 @@ const sendVerificationCode = asyncHandler(async (req, res) => {
       throw new Error("Email does not exist");
     }
     const emailOtp = nanoid();
-    await userModel.update({ id: userId }, { emailOtp });
+    await userModel.updateOne({ _id: userId }, { emailOtp });
     res.status(200).json({ success: true, message: "Otp sent" });
   }
   if (phoneNumber) {
@@ -127,7 +147,7 @@ const sendVerificationCode = asyncHandler(async (req, res) => {
       throw new Error("Phone number does not exist");
     }
     const phoneOtp = nanoid();
-    await userModel.create({ phoneNumber, phoneOtp });
+    await userModel.updateOne({ _id: userId }, { phoneOtp });
     res.status(200).json({ success: true, message: "Otp sent" });
   }
   res
@@ -140,8 +160,8 @@ const updatePassword = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const user = await userModel.findById(userId);
   if (user && (await bcrypt.compare(oldPassword, user.password))) {
-    await userModel.update(
-      { id: userId },
+    await userModel.updateOne(
+      { _id: userId },
       { password: bcrypt.hash(newPassword, 10) }
     );
     res

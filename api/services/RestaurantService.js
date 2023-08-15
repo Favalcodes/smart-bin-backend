@@ -29,6 +29,7 @@ const registerRestaurant = asyncHandler(async (req, res) => {
     email,
     name,
     password: hashedPassword,
+    tempPassword: password
   });
   res
     .status(200)
@@ -69,7 +70,7 @@ const loginRestaurant = asyncHandler(async (req, res) => {
 
 const onboardRestaurant = asyncHandler(async (req, res) => {
   const { image, openTime, isFree, bookingFee } = req.body;
-  const id = req.restaurant.id;
+  const id = req.restaurant._id;
   const restaurant = await restaurantModel.findById(id);
   if (!restaurant) {
     res.status(404);
@@ -86,19 +87,21 @@ const onboardRestaurant = asyncHandler(async (req, res) => {
   }
   if (bookingFee) {
     restaurant.bookingFee = bookingFee;
+    restaurant.doneOnboarding = true
   }
-  const updated = await restaurantModel.updateOne({ id }, restaurant);
+  const updated = await restaurantModel.updateOne({ _id: id }, restaurant);
+  const updatedRestaurant = await restaurantModel.findById(id);
   res
     .status(200)
     .json({
       success: true,
       message: "Restaurant updated successfully",
-      restaurant: updated,
+      restaurant: updatedRestaurant,
     });
 });
 
 const getRestaurant = asyncHandler(async (req, res) => {
-  const id = req.params.id || req.restaurant.id;
+  const id = req.query.id || req.restaurant._id;
   if (!id) {
     res.status(400);
     throw new Error("Restaurant Id not provided");
@@ -114,8 +117,8 @@ const getRestaurant = asyncHandler(async (req, res) => {
 });
 
 const updateRestaurant = asyncHandler(async (req, res) => {
-  const data = req.body;
-  const id = req.restaurant.id;
+  const {data} = req.body;
+  const id = req.restaurant._id;
   if (!id) {
     res.status(400);
     throw new Error("Restaurant Id not provided");
@@ -125,13 +128,14 @@ const updateRestaurant = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Restaurant does not exist");
   }
-  const restaurant = await restaurantModel.updateOne({ id }, data);
+  const restaurant = await restaurantModel.updateOne({ _id: id }, data);
+  const updated = await restaurantModel.findById(id);
   res
     .status(200)
     .json({
       success: true,
       message: "Restaurant updated successfully",
-      restaurant,
+      restaurant: updated,
     });
 });
 

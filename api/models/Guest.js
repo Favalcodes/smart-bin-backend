@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 
 const GuestSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.SchemaTypes.ObjectId, ref: "User" },
-    restaurant: { type: mongoose.SchemaTypes.ObjectId, ref: "Restaurant" },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant" },
     numberOfGuest: { type: Number },
     time: { type: String },
     date: { type: Date },

@@ -12,15 +12,15 @@ const validateToken = asyncHandler(async (req, res, next) => {
         res.status(401);
         throw new Error("User is not authorized");
       }
-      if (decoded.role === role.USER) {
+      if (decoded.user) {
         req.user = decoded.user;
         next();
       }
-      if (decoded.role === role.RESTAURANT) {
+      if (decoded.restaurant) {
         req.restaurant = decoded.restaurant;
         next();
       }
-      if (decoded.role === role.ADMIN) {
+      if (decoded.admin) {
         req.admin = decoded.admin;
         next();
       }

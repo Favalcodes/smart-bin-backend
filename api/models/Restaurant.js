@@ -5,6 +5,7 @@ const RestaurantSchema = new mongoose.Schema(
     name: String,
     email: String,
     password: String,
+    tempPassword: String,
     emailOtp: String,
     isEmailVerified: {type: Boolean, default: false},
     doneOnboarding: {type: Boolean, default: false},
