@@ -4,22 +4,28 @@ const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const userModel = require("../models/User");
-const { role } = require("../constants");
+const { adminRole, role } = require("../constants");
 
 const registerAdmin = asyncHandler(async (req, res) => {
   const { email, password, role } = req.body;
   if (!email || !password || !role) {
+    res.status(400);
     throw new Error("Email, Password and Role are required");
+  }
+  if(role !== adminRole.SUB_ADMIN && role !== adminRole.SUPER_ADMIN) {
+    res.status(400)
+    throw new Error("Role should either be SUPER_ADMIN or SUB_ADMIN")
   }
   const isExist = await adminModel.findOne({ email });
   const isUserExist = await userModel.findOne({ email });
   if (isExist || isUserExist) {
+    res.status(400);
     throw new Error("Email already exist");
   }
   const newPassword = await bcrypt.hash(password, 10);
   const nanoid = await customAlphabet("1234567890", 6);
   const emailOtp = nanoid();
-  const admin = await userModel.create({
+  const admin = await adminModel.create({
     email,
     role,
     password: newPassword,
@@ -99,6 +105,7 @@ const registerAdmin = asyncHandler(async (req, res) => {
 const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
+    res.status(400);
     throw new Error("Email and Password are required");
   }
   const admin = await adminModel.findOne({ email });
@@ -114,9 +121,11 @@ const loginAdmin = asyncHandler(async (req, res) => {
     );
     res
       .status(200)
-      .json({ success: true, message: "Logged in successfully", token });
+      .json({ success: true, message: "Logged in successfully", token, admin });
+  } else {
+    res.status(500);
+    throw new Error("Login not successful, admin does not exist");
   }
-  throw new Error("Login not successful");
 });
 
 // @TO-DO

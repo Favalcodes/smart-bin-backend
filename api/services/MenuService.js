@@ -11,7 +11,11 @@ const createMenuCategory = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("Name is required");
   }
-  const id = req.admin.id;
+  const id = req.admin._id;
+  if (!id) {
+    res.status(401);
+    throw new Error("Unauthorized");
+  }
   const admin = await adminModel.findById(id);
   if (!admin) {
     res.status(404);
@@ -36,7 +40,11 @@ const createSubcategory = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("Please fill all details, Name, and category is required");
   }
-  const id = req.restaurant.id;
+  const id = req.restaurant._id;
+  if (!id) {
+    res.status(403);
+    throw new Error("Unauthorized");
+  }
   const restaurant = await restaurantModel.findById(id);
   if (!restaurant) {
     res.status(404);
@@ -53,10 +61,20 @@ const createSubcategory = asyncHandler(async (req, res) => {
 });
 
 const getSubcategories = asyncHandler(async (req, res) => {
-  const categories = await menuSubcategoryModel.find({
-    isDeleted: false,
-    restaurant: id,
-  });
+  const { categoryId } = req.body;
+  let categories
+  if (!categoryId) {
+    categories = await menuSubcategoryModel.find({
+      isDeleted: false,
+      restaurant: req.restaurant._id,
+    });
+  } else {
+    categories = await menuSubcategoryModel.find({
+      isDeleted: false,
+      restaurant: req.restaurant._id,
+      category: categoryId,
+    });
+  }
   const subCategories = categories.map(async (item) => {
     const menu = await menuModel.find({ subCategory: item.id });
     return {

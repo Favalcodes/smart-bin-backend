@@ -13,6 +13,6 @@ exports.role = {
 };
 
 exports.adminRole = {
-  SUPER_ADMIN: "SUPER ADMIN",
-  SUB_ADMIN: "SUB ADMIN",
+  SUPER_ADMIN: "SUPER_ADMIN",
+  SUB_ADMIN: "SUB_ADMIN",
 };
