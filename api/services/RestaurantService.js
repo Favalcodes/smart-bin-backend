@@ -29,7 +29,8 @@ const registerRestaurant = asyncHandler(async (req, res) => {
     email,
     name,
     password: hashedPassword,
-    tempPassword: password
+    tempPassword: password,
+    role: role.RESTAURANT
   });
   res
     .status(200)

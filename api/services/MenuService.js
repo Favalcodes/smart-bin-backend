@@ -75,13 +75,13 @@ const getSubcategories = asyncHandler(async (req, res) => {
       category: categoryId,
     });
   }
-  const subCategories = categories.map(async (item) => {
+  const subCategories = await Promise.all(categories.map(async (item) => {
     const menu = await menuModel.find({ subCategory: item.id });
     return {
-      ...item,
+      ...item.toObject(),
       menu,
     };
-  });
+  }))
   res
     .status(200)
     .json({ success: true, message: "Subcategories retrieved", subCategories });
@@ -95,7 +95,11 @@ const createMenu = asyncHandler(async (req, res) => {
       "Please fill all details, Name, subcategory and price is required"
     );
   }
-  const id = req.restaurant.id;
+  const id = req.restaurant._id;
+  if(!id) {
+    res.status(401)
+    throw new Error('Unauthorized')
+  }
   const restaurant = await restaurantModel.findById(id);
   if (!restaurant) {
     res.status(404);
@@ -111,7 +115,21 @@ const createMenu = asyncHandler(async (req, res) => {
 });
 
 const getMenuBySubcategory = asyncHandler(async (req, res) => {
-  const subCategoryId = req.params.id;
+  const subCategoryId = req.query.id;
+  const { restaurantId } = req.body
+  if(!restaurantId) {
+    res.status(400)
+    throw new Error('Restaurant Id is required')
+  }
+  if(!subCategoryId) {
+    res.status(400)
+    throw new Error('Subcategory Id is required')
+  }
+  const restaurant = await restaurantModel.findById(restaurantId)
+  if (!restaurant) {
+    res.status(404);
+    throw new Error("Restaurant does not exist");
+  }
   const subcategory = await menuSubcategoryModel.findById(subCategoryId);
   if (!subcategory) {
     res.status(404);
@@ -119,14 +137,14 @@ const getMenuBySubcategory = asyncHandler(async (req, res) => {
   }
   const menu = await menuModel.find({
     isDeleted: false,
-    restaurant: id,
+    restaurant: restaurantId,
     subCategory: subCategoryId,
   });
   res.status(200).json({ success: true, message: "Menu retrieved", menu });
 });
 
 const getMenuById = asyncHandler(async (req, res) => {
-  const menuId = req.params.id;
+  const menuId = req.query.id;
   const menu = await menuModel.findById(menuId);
   if (!menu) {
     res.status(404);

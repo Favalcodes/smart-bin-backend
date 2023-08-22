@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { role } = require("../constants");
 
 const RestaurantSchema = new mongoose.Schema(
   {
@@ -6,6 +7,7 @@ const RestaurantSchema = new mongoose.Schema(
     email: String,
     password: String,
     tempPassword: String,
+    role: {type: String, enum: Object.values(role)},
     emailOtp: String,
     isEmailVerified: {type: Boolean, default: false},
     doneOnboarding: {type: Boolean, default: false},

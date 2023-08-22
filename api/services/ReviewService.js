@@ -5,7 +5,11 @@ const restaurantModel = require("../models/Restaurant");
 
 const giveReview = asyncHandler(async (req, res) => {
   const { stars, restaurantId, review } = req.body;
-  const id = req.user.id;
+  const id = req.user._id;
+  if(!id) {
+    res.status(401)
+    throw new Error('Unauthorized')
+  }
   const user = await userModel.findById(id);
   if (!user) {
     res.status(404);
@@ -26,12 +30,16 @@ const giveReview = asyncHandler(async (req, res) => {
     review,
     user: id,
   });
-  res.status(200).json({ success: true, message: "Review given successfully" });
+  res.status(200).json({ success: true, message: "Review given successfully", review: feedback });
 });
 
 const getRestaurantReviews = asyncHandler(async (req, res) => {
-  const filter = req.params.filter;
-  const restaurantId = req.params.id;
+  const filter = req.query.stars;
+  const restaurantId = req.query.restaurant;
+  if(!restaurantId) {
+    res.status(400)
+    throw new Error('Restaurant Id is required')
+  }
   const restaurant = await restaurantModel.findById(restaurantId);
   if (!restaurant) {
     res.status(404);

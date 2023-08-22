@@ -3,6 +3,7 @@ const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { customAlphabet } = require("nanoid");
+const { role } = require("../constants");
 
 const registerUser = asyncHandler(async (req, res) => {
   const { phoneNumber } = req.body;
@@ -17,7 +18,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
   const nanoid = await customAlphabet("1234567890", 6);
   const phoneOtp = nanoid();
-  const user = await userModel.create({ phoneNumber, phoneOtp });
+  const user = await userModel.create({ phoneNumber, phoneOtp, role: role.USER });
   res.status(200).json({
     success: true,
     message: "User Registered Successfully, Otp has been sent to Phone number",
