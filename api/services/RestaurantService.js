@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const restaurantModel = require("../models/Restaurant");
+const rulesModel = require("../models/Rules");
 const bcrypt = require("bcrypt");
 const { customAlphabet } = require("nanoid");
 const { role } = require("../constants");
@@ -30,15 +31,13 @@ const registerRestaurant = asyncHandler(async (req, res) => {
     name,
     password: hashedPassword,
     tempPassword: password,
-    role: role.RESTAURANT
+    role: role.RESTAURANT,
   });
-  res
-    .status(200)
-    .json({
-      success: true,
-      message: "Restaurant created successfully",
-      restaurant,
-    });
+  res.status(200).json({
+    success: true,
+    message: "Restaurant created successfully",
+    restaurant,
+  });
 });
 
 const loginRestaurant = asyncHandler(async (req, res) => {
@@ -88,17 +87,15 @@ const onboardRestaurant = asyncHandler(async (req, res) => {
   }
   if (bookingFee) {
     restaurant.bookingFee = bookingFee;
-    restaurant.doneOnboarding = true
+    restaurant.doneOnboarding = true;
   }
   const updated = await restaurantModel.updateOne({ _id: id }, restaurant);
   const updatedRestaurant = await restaurantModel.findById(id);
-  res
-    .status(200)
-    .json({
-      success: true,
-      message: "Restaurant updated successfully",
-      restaurant: updatedRestaurant,
-    });
+  res.status(200).json({
+    success: true,
+    message: "Restaurant updated successfully",
+    restaurant: updatedRestaurant,
+  });
 });
 
 const getRestaurant = asyncHandler(async (req, res) => {
@@ -118,7 +115,7 @@ const getRestaurant = asyncHandler(async (req, res) => {
 });
 
 const updateRestaurant = asyncHandler(async (req, res) => {
-  const {data} = req.body;
+  const { data } = req.body;
   const id = req.restaurant._id;
   if (!id) {
     res.status(400);
@@ -131,19 +128,79 @@ const updateRestaurant = asyncHandler(async (req, res) => {
   }
   const restaurant = await restaurantModel.updateOne({ _id: id }, data);
   const updated = await restaurantModel.findById(id);
-  res
-    .status(200)
-    .json({
-      success: true,
-      message: "Restaurant updated successfully",
-      restaurant: updated,
-    });
+  res.status(200).json({
+    success: true,
+    message: "Restaurant updated successfully",
+    restaurant: updated,
+  });
 });
 
 const getAllRestaurant = asyncHandler(async (req, res) => {
-  const restaurants = await restaurantModel.find()
-  res.status(200).json({success: true, message: "Restaurants found", data: restaurants})
-})
+  const restaurants = await restaurantModel.find();
+  res
+    .status(200)
+    .json({ success: true, message: "Restaurants found", data: restaurants });
+});
+
+const addRulesAndPolicy = asyncHandler(async (req, res) => {
+  try {
+    const id = req.restaurant._id;
+    if (!id) {
+      res.status(400);
+      throw new Error("Restaurant Id not provided");
+    }
+    const restaurant = await restaurantModel.findById(id);
+    if (!restaurant) {
+      res.status(404);
+      throw new Error("Restaurant does not exist");
+    }
+    const { rules, policy } = req.body;
+    const result = await rulesModel.create({ rules, policy, restaurant: id });
+    res.status(200).json({
+      success: true,
+      message: "Rules and Policy added successfully",
+      data: result,
+    });
+  } catch (error) {
+    res.status(400);
+    throw new Error(`Error: ${error}`);
+  }
+});
+
+const updateRulesAndPolicy = asyncHandler(async (req, res) => {
+  try {
+    const { id, rules, policy } = req.body;
+    const restaurantId = req.restaurant._id;
+    if (!restaurantId) {
+      res.status(400);
+      throw new Error("Restaurant Id not provided");
+    }
+    const restaurant = await restaurantModel.findById(restaurantId);
+    if (!restaurant) {
+      res.status(404);
+      throw new Error("Restaurant does not exist");
+    }
+    const isExist = await rulesModel.findById(id);
+    if (!isExist) {
+      res.status(404);
+      throw new Error("Rules does not exist");
+    }
+    if (restaurantId != isExist.restaurant) {
+      res.status(401);
+      throw new Error("Unauthorized");
+    }
+    await rulesModel.updateOne({ _id: id }, { rules, policy });
+    const updated = await rulesModel.findById(id);
+    res.status(200).json({
+      success: true,
+      message: "Rules and Policy updated successfully",
+      data: updated,
+    });
+  } catch (error) {
+    res.status(400);
+    throw new Error(`Error: ${error}`);
+  }
+});
 
 module.exports = {
   registerRestaurant,
@@ -151,5 +208,7 @@ module.exports = {
   onboardRestaurant,
   getRestaurant,
   updateRestaurant,
-  getAllRestaurant
+  getAllRestaurant,
+  addRulesAndPolicy,
+  updateRulesAndPolicy,
 };

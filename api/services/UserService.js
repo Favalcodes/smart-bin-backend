@@ -1,4 +1,5 @@
 const userModel = require("../models/User");
+const rulesModel = require("../models/Rules");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -183,8 +184,8 @@ const searchRestaurant = asyncHandler(async (req, res) => {
   try {
     const { term } = req.body;
     if (!term) {
-      res.status(400)
-      throw new Error("Missing search term" );
+      res.status(400);
+      throw new Error("Missing search term");
     }
 
     const result = await restaurantModel.find({
@@ -194,10 +195,27 @@ const searchRestaurant = asyncHandler(async (req, res) => {
       ],
     });
 
-    res.status(200).json({ success: true, message: "Result found", data: result });
+    res
+      .status(200)
+      .json({ success: true, message: "Result found", data: result });
   } catch (error) {
-    res.status(500)
+    res.status(500);
     throw new Error(`Internal Server Error: ${error}`);
+  }
+});
+
+const getRulesAndPolicy = asyncHandler(async (req, res) => {
+  try {
+    const { restaurantId } = req.body;
+    const rules = await rulesModel.findOne({ restaurant: restaurantId });
+    res.status(200).json({
+      success: true,
+      message: "Rules and policy returned successfully",
+      rules,
+    });
+  } catch (error) {
+    res.status(500);
+    throw new Error(`Error: ${error}`);
   }
 });
 
@@ -209,4 +227,5 @@ module.exports = {
   sendVerificationCode,
   updatePassword,
   searchRestaurant,
+  getRulesAndPolicy,
 };
