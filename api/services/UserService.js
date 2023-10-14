@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { customAlphabet } = require("nanoid");
 const { role } = require("../constants");
+const restaurantModel = require("../models/Restaurant");
 
 const registerUser = asyncHandler(async (req, res) => {
   const { phoneNumber } = req.body;
@@ -11,14 +12,19 @@ const registerUser = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("Phone number is required");
   }
-  const isExist = await userModel.findOne({ phoneNumber });
-  if (isExist) {
-    res.status(400);
-    throw new Error("Phone number already exist");
-  }
   const nanoid = await customAlphabet("1234567890", 6);
   const phoneOtp = nanoid();
-  const user = await userModel.create({ phoneNumber, phoneOtp, role: role.USER });
+  const isExist = await userModel.findOne({ phoneNumber });
+  if (isExist) {
+    await userModel.updateOne({ _id: isExist?.id }, { phoneOtp });
+    res.status(400);
+    throw new Error("Phone number already exist, Please verify");
+  }
+  const user = await userModel.create({
+    phoneNumber,
+    phoneOtp,
+    role: role.USER,
+  });
   res.status(200).json({
     success: true,
     message: "User Registered Successfully, Otp has been sent to Phone number",
@@ -50,7 +56,7 @@ const onboardUser = asyncHandler(async (req, res) => {
     { firstName, lastName, email, password: newPassword, emailOtp }
   );
   if (data) {
-    console.log('DATA', data)
+    console.log("DATA", data);
     const user = await userModel.findOne({ email });
     res.status(200).json({
       success: true,
@@ -97,7 +103,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
     );
     res
       .status(200)
-      .json({ success: true, message: `${route} verified successfully`, user });
+      .json({ success: true, message: `Email verified successfully`, user });
   }
 });
 
@@ -173,6 +179,28 @@ const updatePassword = asyncHandler(async (req, res) => {
   throw new Error("Old password is incorrect");
 });
 
+const searchRestaurant = asyncHandler(async (req, res) => {
+  try {
+    const { term } = req.body;
+    if (!term) {
+      res.status(400)
+      throw new Error("Missing search term" );
+    }
+
+    const result = await restaurantModel.find({
+      $or: [
+        { name: { $regex: term, $options: "i" } },
+        { city: { $regex: term, $options: "i" } },
+      ],
+    });
+
+    res.status(200).json({ success: true, message: "Result found", data: result });
+  } catch (error) {
+    res.status(500)
+    throw new Error(`Internal Server Error: ${error}`);
+  }
+});
+
 module.exports = {
   registerUser,
   onboardUser,
@@ -180,4 +208,5 @@ module.exports = {
   loginUser,
   sendVerificationCode,
   updatePassword,
+  searchRestaurant,
 };

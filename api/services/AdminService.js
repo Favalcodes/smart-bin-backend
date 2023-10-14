@@ -5,6 +5,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const userModel = require("../models/User");
 const { adminRole, role } = require("../constants");
+const guestModel = require("../models/Guest");
+const restaurantModel = require("../models/Restaurant");
 
 const registerAdmin = asyncHandler(async (req, res) => {
   const { email, password, role } = req.body;
@@ -12,9 +14,9 @@ const registerAdmin = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("Email, Password and Role are required");
   }
-  if(role !== adminRole.SUB_ADMIN && role !== adminRole.SUPER_ADMIN) {
-    res.status(400)
-    throw new Error("Role should either be SUPER_ADMIN or SUB_ADMIN")
+  if (role !== adminRole.SUB_ADMIN && role !== adminRole.SUPER_ADMIN) {
+    res.status(400);
+    throw new Error("Role should either be SUPER_ADMIN or SUB_ADMIN");
   }
   const isExist = await adminModel.findOne({ email });
   const isUserExist = await userModel.findOne({ email });
@@ -35,6 +37,51 @@ const registerAdmin = asyncHandler(async (req, res) => {
     success: true,
     message: "Admin Registered Successfully, Otp has been sent to Email",
     admin,
+  });
+});
+
+const getAllUsers = asyncHandler(async (req, res) => {
+  const id = req.admin._id;
+  if (!id) {
+    res.status(401);
+    throw new Error("Unauthorized");
+  }
+  const admin = await adminModel.findById(id);
+  if (!admin) {
+    res.status(404);
+    throw new Error("Admin does not exist");
+  }
+  const users = await userModel.find();
+  res.status(200).json({ success: true, message: "Users record found", users });
+});
+
+const getAllReservations = asyncHandler(async (req, res) => {
+  const id = req.admin._id;
+  if (!id) {
+    res.status(401);
+    throw new Error("Unauthorized");
+  }
+  const admin = await adminModel.findById(id);
+  if (!admin) {
+    res.status(404);
+    throw new Error("Admin does not exist");
+  }
+  const reservations = await guestModel.find();
+  const restaurantPromises = reservations.map(async (item) => {
+    const restaurant = await restaurantModel.findById(item.restaurant);
+    const user = await userModel.findById(item.user);
+    return {
+      ...item.toObject(),
+      restaurant: restaurant.toObject(),
+      user: user.toObject(),
+    };
+  });
+
+  const allReservations = await Promise.all(restaurantPromises);
+  res.status(200).json({
+    success: true,
+    message: "Reservations found",
+    reservations: allReservations,
   });
 });
 
@@ -160,6 +207,10 @@ const loginAdmin = asyncHandler(async (req, res) => {
 const updatePassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const id = req.admin.id;
+  if (!id) {
+    res.status(401);
+    throw new Error("Unauthorized");
+  }
   const admin = await adminModel.findById(id);
   if (admin && (await bcrypt.compare(oldPassword, admin.password))) {
     await adminModel.update({ id }, { password: bcrypt.hash(newPassword, 10) });
@@ -175,4 +226,6 @@ module.exports = {
   registerAdmin,
   loginAdmin,
   updatePassword,
+  getAllUsers,
+  getAllReservations,
 };

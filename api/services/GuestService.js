@@ -63,36 +63,44 @@ const getRestaurantGuests = asyncHandler(async (req, res) => {
       restaurant: id,
       isCancelled: cancelled,
     });
-    const userPromises = guests.map(async item => {
+    const userPromises = guests.map(async (item) => {
       const user = await userModel.findById(item.user);
       return {
         ...item.toObject(),
-        user: user.toObject()
+        user: user.toObject(),
       };
     });
-    
+
     const updatedGuests = await Promise.all(userPromises);
-    res.status(200).json({ success: true, message: "Guest retrieved", guests: updatedGuests });
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Guest retrieved",
+        guests: updatedGuests,
+      });
   }
   const guests = await guestModel.find({ restaurant: id });
-  const userPromises = guests.map(async item => {
+  const userPromises = guests.map(async (item) => {
     const user = await userModel.findById(item.user);
     return {
       ...item.toObject(),
-      user: user.toObject()
+      user: user.toObject(),
     };
   });
-  
+
   const updatedGuests = await Promise.all(userPromises);
-  res.status(200).json({ success: true, message: "Guest retrieved", guests: updatedGuests });
+  res
+    .status(200)
+    .json({ success: true, message: "Guest retrieved", guests: updatedGuests });
 });
 
 const getUserReservations = asyncHandler(async (req, res) => {
   const cancelled = req.query.cancelled;
   const id = req.user?._id;
-  if(!id) {
-    res.status(401)
-    throw new Error('Unauthorized')
+  if (!id) {
+    res.status(401);
+    throw new Error("Unauthorized");
   }
   const user = await userModel.findById(id);
   if (!user) {
@@ -104,28 +112,32 @@ const getUserReservations = asyncHandler(async (req, res) => {
       restaurant: id,
       isCancelled: cancelled,
     });
-    const reservationPromises = reservations.map(async item => {
+    const reservationPromises = reservations.map(async (item) => {
       const restaurant = await restaurantModel.findById(item.restaurant);
       return {
         ...item.toObject(),
-        restaurant: restaurant.toObject()
+        restaurant: restaurant.toObject(),
       };
     });
-    
+
     const updatedReservation = await Promise.all(reservationPromises);
     res
       .status(200)
-      .json({ success: true, message: "Guest retrieved", reservations: updatedReservation });
+      .json({
+        success: true,
+        message: "Guest retrieved",
+        reservations: updatedReservation,
+      });
   }
   const reservations = await guestModel.find({ user: id });
-  const reservationPromises = reservations.map(async item => {
+  const reservationPromises = reservations.map(async (item) => {
     const restaurant = await restaurantModel.findById(item.restaurant);
     return {
       ...item.toObject(),
-      restaurant: restaurant.toObject()
+      restaurant: restaurant.toObject(),
     };
   });
-  
+
   const updatedReservation = await Promise.all(reservationPromises);
   res.status(200).json({
     success: true,
@@ -139,9 +151,9 @@ const cancelReservation = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   const restaurantId = req.restaurant?._id;
   const reservationId = req.query.id;
-  if(!reservationId) {
-    res.status(400)
-    throw new Error('Reservation Id is required')
+  if (!reservationId) {
+    res.status(400);
+    throw new Error("Reservation Id is required");
   }
   const now = new Date();
   if (userId) {

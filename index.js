@@ -20,7 +20,7 @@ app.use('/api/admin', require('./api/routes/adminRoutes'))
 app.use(errorHandler)
 
 app.listen(process.env.PORT, () => {
-    console.log('Server started on 4000')
+    console.log(`Server started on ${process.env.PORT}`)
 })
 
 module.exports = app

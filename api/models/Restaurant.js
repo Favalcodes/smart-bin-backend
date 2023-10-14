@@ -6,6 +6,8 @@ const RestaurantSchema = new mongoose.Schema(
     name: String,
     email: String,
     password: String,
+    city: String,
+    state: String,
     tempPassword: String,
     role: {type: String, enum: Object.values(role)},
     emailOtp: String,

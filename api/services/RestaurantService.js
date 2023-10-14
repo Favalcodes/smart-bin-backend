@@ -140,10 +140,16 @@ const updateRestaurant = asyncHandler(async (req, res) => {
     });
 });
 
+const getAllRestaurant = asyncHandler(async (req, res) => {
+  const restaurants = await restaurantModel.find()
+  res.status(200).json({success: true, message: "Restaurants found", data: restaurants})
+})
+
 module.exports = {
   registerRestaurant,
   loginRestaurant,
   onboardRestaurant,
   getRestaurant,
   updateRestaurant,
+  getAllRestaurant
 };

@@ -6,9 +6,9 @@ const restaurantModel = require("../models/Restaurant");
 const giveReview = asyncHandler(async (req, res) => {
   const { stars, restaurantId, review } = req.body;
   const id = req.user._id;
-  if(!id) {
-    res.status(401)
-    throw new Error('Unauthorized')
+  if (!id) {
+    res.status(401);
+    throw new Error("Unauthorized");
   }
   const user = await userModel.findById(id);
   if (!user) {
@@ -30,15 +30,19 @@ const giveReview = asyncHandler(async (req, res) => {
     review,
     user: id,
   });
-  res.status(200).json({ success: true, message: "Review given successfully", review: feedback });
+  res.status(200).json({
+    success: true,
+    message: "Review given successfully",
+    review: feedback,
+  });
 });
 
 const getRestaurantReviews = asyncHandler(async (req, res) => {
   const filter = req.query.stars;
   const restaurantId = req.query.restaurant;
-  if(!restaurantId) {
-    res.status(400)
-    throw new Error('Restaurant Id is required')
+  if (!restaurantId) {
+    res.status(400);
+    throw new Error("Restaurant Id is required");
   }
   const restaurant = await restaurantModel.findById(restaurantId);
   if (!restaurant) {
@@ -55,9 +59,18 @@ const getRestaurantReviews = asyncHandler(async (req, res) => {
       .json({ success: true, message: "Reviews retrieved", reviews });
   }
   const reviews = await reviewModel.find({ restaurant: restaurantId });
+  const userPromises = reviews.map(async item => {
+    const user = await userModel.findById(item.user);
+    return {
+      ...item.toObject(),
+      user: user.toObject()
+    };
+  });
+  
+  const allReviews = await Promise.all(userPromises);
   res
     .status(200)
-    .json({ success: true, message: "Reviews retrieved", reviews });
+    .json({ success: true, message: "Reviews retrieved", reviews: allReviews });
 });
 
 module.exports = { giveReview, getRestaurantReviews };
