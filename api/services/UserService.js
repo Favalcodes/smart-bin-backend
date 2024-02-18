@@ -18,8 +18,10 @@ const registerUser = asyncHandler(async (req, res) => {
   const isExist = await userModel.findOne({ phoneNumber });
   if (isExist) {
     await userModel.updateOne({ _id: isExist?.id }, { phoneOtp });
-    res.status(400);
-    throw new Error("Phone number already exist, Please verify");
+    if (isExist?.isPhoneVerified) {
+      res.status(400);
+      throw new Error("Phone number already exist, Please verify");
+    }
   }
   const user = await userModel.create({
     phoneNumber,
@@ -70,6 +72,51 @@ const onboardUser = asyncHandler(async (req, res) => {
   }
 });
 
+const updateUserImage = asyncHandler(async (req, res) => {
+  const { image } = req.body;
+  const userId = req.user._id;
+  if (!userId) {
+    res.status(400);
+    throw new Error("User Id is required");
+  }
+  if (!image) {
+    res.status(400);
+    throw new Error("Please upload an image");
+  }
+  const data = await userModel.updateOne({ _id: userId }, { image });
+  if (data) {
+    const user = await userModel.findById(userId);
+    res.status(200).json({
+      success: true,
+      message: "User Image Updated Successfully",
+      user,
+    });
+  } else {
+    res.status(500);
+    throw new Error("User Image was not update");
+  }
+});
+
+const getMe = asyncHandler(async (req, res) => {
+  console.log('----USER ID', req.user)
+  const userId = req.user._id;
+  if (!userId) {
+    res.status(400);
+    throw new Error("User Id is required");
+  }
+  const user = await userModel.findById(userId);
+  if (user) {
+    res.status(200).json({
+      success: true,
+      message: "User retrieved Successfully",
+      user,
+    });
+  } else {
+    res.status(500);
+    throw new Error("User doesn't exist");
+  }
+});
+
 const verifyOtp = asyncHandler(async (req, res) => {
   const userId = req.query.id;
   const { otp, route } = req.body;
@@ -114,7 +161,10 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new Error("Email and Password are required");
   }
   const user = await userModel.findOne({ email });
-
+  if (!user) {
+    res.status(404);
+    throw new Error("Email does not exist");
+  }
   if (user && (await bcrypt.compare(password, user.password))) {
     const token = jwt.sign(
       {
@@ -127,7 +177,8 @@ const loginUser = asyncHandler(async (req, res) => {
       .status(200)
       .json({ success: true, message: "Logged in successfully", token, user });
   }
-  throw new Error("Login not successful");
+  res.status(400);
+  throw new Error("Password is incorrect");
 });
 
 const sendVerificationCode = asyncHandler(async (req, res) => {
@@ -165,7 +216,7 @@ const sendVerificationCode = asyncHandler(async (req, res) => {
 
 const updatePassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  const userId = req.user.id;
+  const userId = req.user._id;
   const user = await userModel.findById(userId);
   if (user && (await bcrypt.compare(oldPassword, user.password))) {
     await userModel.updateOne(
@@ -228,4 +279,6 @@ module.exports = {
   updatePassword,
   searchRestaurant,
   getRulesAndPolicy,
+  updateUserImage,
+  getMe,
 };

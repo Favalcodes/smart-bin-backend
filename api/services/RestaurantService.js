@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const { customAlphabet } = require("nanoid");
 const { role } = require("../constants");
 const jwt = require("jsonwebtoken");
+const moment = require("moment");
 require("dotenv").config();
 
 const registerRestaurant = asyncHandler(async (req, res) => {
@@ -136,7 +137,28 @@ const updateRestaurant = asyncHandler(async (req, res) => {
 });
 
 const getAllRestaurant = asyncHandler(async (req, res) => {
-  const restaurants = await restaurantModel.find();
+  const { date, time, city, state } = req.body;
+
+  let restaurants;
+  if (date) {
+    const day = moment(date, "DD-MM-YYYY").format("dddd");
+    const queryTime = moment(time, "h:mm A");
+    console.log('----QUERY----', queryTime)
+    restaurants = await restaurantModel.find({
+      "openTime.day": day,
+      "openTime.from": { $lte: queryTime.format("h:mm A") },
+      "openTime.to": { $gte: queryTime.format("h:mm A") },
+    });
+  }
+  if (city) {
+    restaurants = await restaurantModel.find({ city });
+  }
+  if (state) {
+    restaurants = await restaurantModel.find({ state });
+  }
+  if (!date && !time && !city && !state) {
+    restaurants = await restaurantModel.find();
+  }
   res
     .status(200)
     .json({ success: true, message: "Restaurants found", data: restaurants });
