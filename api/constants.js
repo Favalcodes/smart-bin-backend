@@ -9,7 +9,6 @@ exports.constants = {
 exports.role = {
   ADMIN: "ADMIN",
   USER: "USER",
-  RESTAURANT: "RESTAURANT",
 };
 
 exports.adminRole = {

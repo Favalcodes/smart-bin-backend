@@ -16,10 +16,6 @@ const validateToken = asyncHandler(async (req, res, next) => {
         req.user = decoded.user;
         next();
       }
-      if (decoded.restaurant) {
-        req.restaurant = decoded.restaurant;
-        next();
-      }
       if (decoded.admin) {
         req.admin = decoded.admin;
         next();

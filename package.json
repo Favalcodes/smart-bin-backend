@@ -1,22 +1,14 @@
 {
-  "name": "spots-backend",
+  "name": "wastemgt-backend",
   "version": "1.0.0",
-  "description": "backend application for spotsandseat",
+  "description": "backend application for smartbin",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
     "start": "nodemon index.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Spotsnseats/backend.git"
-  },
   "author": "@favalcodes",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Spotsnseats/backend/issues"
-  },
-  "homepage": "https://github.com/Spotsnseats/backend#readme",
   "devDependencies": {
     "nodemon": "^3.0.1"
   },

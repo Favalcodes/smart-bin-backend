@@ -12,10 +12,8 @@ app.get('/', (req, res) => {
     res.send('Server is running')
 })
 app.use('/api/user', require('./api/routes/userRoutes'))
-app.use('/api/restaurant', require('./api/routes/restaurantRoutes'))
-app.use('/api/guest', require('./api/routes/guestRoutes'))
+app.use('/api/schedule', require('./api/routes/scheduleRoutes'))
 app.use('/api/review', require('./api/routes/reviewRoutes'))
-app.use('/api/menu', require('./api/routes/menuRoutes'))
 app.use('/api/admin', require('./api/routes/adminRoutes'))
 app.use(errorHandler)
 

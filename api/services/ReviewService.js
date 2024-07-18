@@ -1,10 +1,9 @@
 const reviewModel = require("../models/Reviews");
 const asyncHandler = require("express-async-handler");
 const userModel = require("../models/User");
-const restaurantModel = require("../models/Restaurant");
 
 const giveReview = asyncHandler(async (req, res) => {
-  const { stars, restaurantId, review } = req.body;
+  const { stars, review } = req.body;
   const id = req.user._id;
   if (!id) {
     res.status(401);
@@ -15,18 +14,12 @@ const giveReview = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("User does not exist");
   }
-  if (!stars || !restaurantId) {
+  if (!stars) {
     res.status(400);
-    throw new Error("Review stars and Restaurant is required");
-  }
-  const restaurant = await restaurantModel.findById(restaurantId);
-  if (!restaurant) {
-    res.status(404);
-    throw new Error("Restaurant does not exist");
+    throw new Error("Review stars is required");
   }
   const feedback = await reviewModel.create({
     stars,
-    restaurant: restaurantId,
     review,
     user: id,
   });
@@ -37,28 +30,8 @@ const giveReview = asyncHandler(async (req, res) => {
   });
 });
 
-const getRestaurantReviews = asyncHandler(async (req, res) => {
-  const filter = req.query.stars;
-  const restaurantId = req.query.restaurant;
-  if (!restaurantId) {
-    res.status(400);
-    throw new Error("Restaurant Id is required");
-  }
-  const restaurant = await restaurantModel.findById(restaurantId);
-  if (!restaurant) {
-    res.status(404);
-    throw new Error("Restaurant does not exist");
-  }
-  if (filter) {
-    const reviews = await reviewModel.find({
-      stars: filter,
-      restaurant: restaurantId,
-    });
-    res
-      .status(200)
-      .json({ success: true, message: "Reviews retrieved", reviews });
-  }
-  const reviews = await reviewModel.find({ restaurant: restaurantId });
+const getReviews = asyncHandler(async (req, res) => {
+  const reviews = await reviewModel.find({});
   const userPromises = reviews.map(async item => {
     const user = await userModel.findById(item.user);
     return {
@@ -73,4 +46,4 @@ const getRestaurantReviews = asyncHandler(async (req, res) => {
     .json({ success: true, message: "Reviews retrieved", reviews: allReviews });
 });
 
-module.exports = { giveReview, getRestaurantReviews };
+module.exports = { giveReview, getReviews };

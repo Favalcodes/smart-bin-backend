@@ -7,6 +7,7 @@ const { customAlphabet } = require("nanoid");
 const { role } = require("../constants");
 const restaurantModel = require("../models/Restaurant");
 
+// Register and onboard function should be merged together
 const registerUser = asyncHandler(async (req, res) => {
   const { phoneNumber } = req.body;
   if (!phoneNumber) {
@@ -72,33 +73,7 @@ const onboardUser = asyncHandler(async (req, res) => {
   }
 });
 
-const updateUserImage = asyncHandler(async (req, res) => {
-  const { image } = req.body;
-  const userId = req.user._id;
-  if (!userId) {
-    res.status(400);
-    throw new Error("User Id is required");
-  }
-  if (!image) {
-    res.status(400);
-    throw new Error("Please upload an image");
-  }
-  const data = await userModel.updateOne({ _id: userId }, { image });
-  if (data) {
-    const user = await userModel.findById(userId);
-    res.status(200).json({
-      success: true,
-      message: "User Image Updated Successfully",
-      user,
-    });
-  } else {
-    res.status(500);
-    throw new Error("User Image was not update");
-  }
-});
-
 const getMe = asyncHandler(async (req, res) => {
-  console.log('----USER ID', req.user)
   const userId = req.user._id;
   if (!userId) {
     res.status(400);
@@ -114,44 +89,6 @@ const getMe = asyncHandler(async (req, res) => {
   } else {
     res.status(500);
     throw new Error("User doesn't exist");
-  }
-});
-
-const verifyOtp = asyncHandler(async (req, res) => {
-  const userId = req.query.id;
-  const { otp, route } = req.body;
-  if (!userId) {
-    res.status(400);
-    throw new Error("User Id is required");
-  }
-  if (route === "PHONE") {
-    const otpExist = await userModel.findOne({ _id: userId, phoneOtp: otp });
-    if (!otpExist) {
-      res.status(400);
-      throw new Error("Invalid otp");
-    }
-    const user = await userModel.updateOne(
-      { _id: userId },
-      { isPhoneVerified: true }
-    );
-    res.status(200).json({
-      success: true,
-      message: "Phone number verified successfully",
-      user,
-    });
-  } else {
-    const otpExist = await userModel.findOne({ _id: userId, emailOtp: otp });
-    if (!otpExist) {
-      res.status(400);
-      throw new Error("Invalid otp");
-    }
-    const user = await userModel.updateOne(
-      { _id: userId },
-      { isEmailVerified: true }
-    );
-    res
-      .status(200)
-      .json({ success: true, message: `Email verified successfully`, user });
   }
 });
 
@@ -181,39 +118,6 @@ const loginUser = asyncHandler(async (req, res) => {
   throw new Error("Password is incorrect");
 });
 
-const sendVerificationCode = asyncHandler(async (req, res) => {
-  const { email, phoneNumber } = req.body;
-  const userId = req.user._id;
-  if (!userId) {
-    res.status(401);
-    throw new Error("Unauthorized");
-  }
-  const nanoid = await customAlphabet("1234567890", 6);
-  if (email) {
-    const isEmailExist = await userModel.findOne({ email });
-    if (!isEmailExist) {
-      res.status(404);
-      throw new Error("Email does not exist");
-    }
-    const emailOtp = nanoid();
-    await userModel.updateOne({ _id: userId }, { emailOtp });
-    res.status(200).json({ success: true, message: "Otp sent" });
-  }
-  if (phoneNumber) {
-    const isPhoneExist = await userModel.findOne({ phoneNumber });
-    if (!isPhoneExist) {
-      res.status(404);
-      throw new Error("Phone number does not exist");
-    }
-    const phoneOtp = nanoid();
-    await userModel.updateOne({ _id: userId }, { phoneOtp });
-    res.status(200).json({ success: true, message: "Otp sent" });
-  }
-  res
-    .status(404)
-    .json({ success: false, message: "No means for verification provided" });
-});
-
 const updatePassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const userId = req.user._id;
@@ -231,45 +135,6 @@ const updatePassword = asyncHandler(async (req, res) => {
   throw new Error("Old password is incorrect");
 });
 
-const searchRestaurant = asyncHandler(async (req, res) => {
-  try {
-    const { term } = req.body;
-    if (!term) {
-      res.status(400);
-      throw new Error("Missing search term");
-    }
-
-    const result = await restaurantModel.find({
-      $or: [
-        { name: { $regex: term, $options: "i" } },
-        { city: { $regex: term, $options: "i" } },
-      ],
-    });
-
-    res
-      .status(200)
-      .json({ success: true, message: "Result found", data: result });
-  } catch (error) {
-    res.status(500);
-    throw new Error(`Internal Server Error: ${error}`);
-  }
-});
-
-const getRulesAndPolicy = asyncHandler(async (req, res) => {
-  try {
-    const { restaurantId } = req.body;
-    const rules = await rulesModel.findOne({ restaurant: restaurantId });
-    res.status(200).json({
-      success: true,
-      message: "Rules and policy returned successfully",
-      rules,
-    });
-  } catch (error) {
-    res.status(500);
-    throw new Error(`Error: ${error}`);
-  }
-});
-
 module.exports = {
   registerUser,
   onboardUser,
@@ -277,8 +142,6 @@ module.exports = {
   loginUser,
   sendVerificationCode,
   updatePassword,
-  searchRestaurant,
-  getRulesAndPolicy,
   updateUserImage,
   getMe,
 };
